@@ -35,6 +35,17 @@ class ElectricityMixin:
         self.base.electricity += self.electricity
 
 
+class SpeedMixin:
+    speed = 1
+
+    def get_speed(self):
+        speed = self.speed
+        for o in self.operators:
+            if o:
+                speed += o.speed
+        return speed
+
+
 class ControlCenter(Facility):
     def __init__(self, base, level):
         super().__init__(
@@ -75,16 +86,16 @@ class TradingPost(Facility, ElectricityMixin):
         self.set_electricity()
 
 
-class Factory(Facility, ElectricityMixin):
+class Factory(Facility, ElectricityMixin, SpeedMixin):
     def __init__(self, base, level, location):
         super().__init__(
             base=base,
             level=level,
-            operators=[None] * (level - 1),
+            operators=[None] * level,
         )
         self.capacity = [24, 36, 54][level - 1]
-        self.speed = 1
         base.left_side[location] = self
+        self.location = location
         self.set_electricity()
 
 
