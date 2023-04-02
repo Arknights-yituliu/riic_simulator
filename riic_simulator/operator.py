@@ -184,6 +184,29 @@ class Ptilopsis(Operator):
             self.speed = 0.25
 
 
+class Mizuki(Operator):
+    skill_name = ["意识协议"]
+
+    def get_sub(self):
+        return [f"{self.facility.location}.operators"]
+
+    def get_pub(self):
+        location = self.facility.location
+        index = self.facility.operators.index(self)
+        return [f"{location}.{index}.speed"]
+
+    def skill(self):
+        print("我来给大家做点好吃的放松下吧？")
+        print("进驻制造站时，当前制造站内每个标准化类技能为自身+5%的生产力")
+        self.speed = 0
+        if isinstance(self.facility, Factory):
+            for o in self.facility.operators:
+                if o and ("标准化·α" in o.skill_name or "标准化·β" in o.skill_name):
+                    self.speed += 0.05
+            self.speed += 0.25
+
+
+
 class KirinXYato(Operator):
     skill_name = ["耐力回复"]
 
