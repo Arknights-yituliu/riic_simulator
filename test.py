@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from riic_simulator import *
+from riic_simulator.operator import *
 
 base = Base()
 
@@ -24,3 +25,9 @@ Office(base, level=3)
 TrainingRoom(base, level=3)
 
 print(f"Electricity: {base.electricity}/{base.electricity_limit}")
+
+Mayer().put(base.left_side["B201"])
+Dorothy().put(base.left_side["B201"])
+Ptilopsis().put(base.left_side["B201"])
+
+print(base.left_side["B201"].get_speed())
