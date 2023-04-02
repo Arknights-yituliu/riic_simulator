@@ -182,3 +182,66 @@ class Ptilopsis(Operator):
         self.speed = 0
         if isinstance(self.facility, Factory):
             self.speed = 0.25
+
+
+class KirinXYato(Operator):
+    skill_name = ["耐力回复"]
+
+    def get_pub(self):
+        return ["木天蓼"]
+
+    def skill(self):
+        print("我希望承担更为艰巨的任务，但如果这是您的安排，我愿意去做。")
+        print("进驻控制中枢时，自身心情每小时消耗+0.5，木天蓼+8")
+        if isinstance(self.facility, ControlCenter):
+            extra = self.facility.base.extra
+            extra.setdefault("木天蓼", 0)
+            extra["木天蓼"] += 8
+
+
+class RathalosSNoirCorne(Operator):
+    skill_name = ["团队合作"]
+
+    def get_sub(self):
+        return [f"{self.facility.location}.operators"]
+
+    def get_pub(self):
+        return ["木天蓼"]
+
+    def skill(self):
+        print("小心，小心，让俺先把刀收起来。")
+        print("进驻控制中枢时，控制中枢内每有1名怪物猎人小队干员，则木天蓼+2")
+        if isinstance(self.facility, ControlCenter):
+            mh_team = [KirinXYato, RathalosSNoirCorne, TerraResearchCommission]
+            extra = self.facility.base.extra
+            for o in self.facility.operators:
+                for oc in mh_team:
+                    if isinstance(o, oc):
+                        extra.setdefault("木天蓼", 0)
+                        extra["木天蓼"] += 2
+                        break
+
+
+class TerraResearchCommission(Operator):
+    skill_name = ["可爱的艾露猫"]
+
+    def get_sub(self):
+        return [f"{self.name}.put", "木天蓼"]
+
+    def get_pub(self):
+        location = self.facility.location
+        index = self.facility.operators.index(self)
+        return [f"{location}.{index}.speed", f"{location}.{index}.limit"]
+
+    def skill(self):
+        print("拖，拖喵......小工匠，你怎么去哪里都带着一大堆材料喵？")
+        print("进驻贸易站时，订单获取效率+5%，且订单上限+2，同时每有1个木天蓼，则订单获取效率+3%")
+        self.speed = 0
+        self.limit = 0
+        if isinstance(self.facility, TradingPost):
+            self.speed += 0.05
+            self.limit += 2
+            extra = self.facility.base.extra
+            extra.setdefault("木天蓼", 0)
+            count = extra["木天蓼"]
+            self.speed += 0.03 * count

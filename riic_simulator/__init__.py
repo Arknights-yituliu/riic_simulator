@@ -15,6 +15,7 @@ class Base:
         self.workshop = None
         self.office = None
         self.training = None
+        self.extra = {}
 
 
 class Facility:
@@ -23,11 +24,13 @@ class Facility:
         base=None,
         level=0,
         max_level=3,
+        location="",
         operators=[],
     ):
         self.base = base
         self.level = level
         self.max_level = max_level
+        self.location = location
         self.operators = operators
 
 
@@ -65,6 +68,7 @@ class ControlCenter(Facility):
             base=base,
             level=level,
             max_level=5,
+            location="control_center",
             operators=[None] * level,
         )
         self.assistant = None
@@ -79,6 +83,7 @@ class PowerPlant(Facility):
         super().__init__(
             base=base,
             level=level,
+            location=location,
             operators=[None],
         )
         self.electricity = self.electircity_table[level - 1]
@@ -111,12 +116,12 @@ class TradingPost(Facility, ElectricityMixin, SpeedMixin, SubscribeMixin):
         super().__init__(
             base=base,
             level=level,
+            location=location,
             operators=[None] * level,
         )
         self.base_limit = [6, 8, 10][level - 1]
         self.limit = self.base_limit
         base.left_side[location] = self
-        self.location = location
         self.set_electricity()
         self.probability_table = {
             1: {2: 1, 3: 0, 4: 0},
@@ -145,11 +150,11 @@ class Factory(Facility, ElectricityMixin, SpeedMixin, SubscribeMixin):
         super().__init__(
             base=base,
             level=level,
+            location=location,
             operators=[None] * level,
         )
         self.capacity = [24, 36, 54][level - 1]
         base.left_side[location] = self
-        self.location = location
         self.set_electricity()
         self.subscribe("speed", self.update_speed)
 

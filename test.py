@@ -54,3 +54,10 @@ for i in range(8):
     print(f"订单数：{len(B102.orders)}/{B102.limit}，效率：{B102.speed}")
     B102.new_order()
 print(B102.orders)
+
+B101 = base.left_side["B101"]
+control_center = base.control_center
+TerraResearchCommission().put(B101)
+KirinXYato().put(control_center)
+RathalosSNoirCorne().put(control_center)
+print(f"木天蓼数量：{base.extra['木天蓼']}，B101的效率是{B101.speed}，订单上限是{B101.limit}")
