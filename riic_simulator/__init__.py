@@ -1,3 +1,7 @@
+import random
+from pydispatch import dispatcher
+
+
 class Base:
     def __init__(self):
         self.drone = 0
@@ -37,13 +41,22 @@ class ElectricityMixin:
 
 class SpeedMixin:
     speed = 1
+    base_speed = 1
 
-    def get_speed(self):
-        speed = self.speed
+    def update_speed(self):
+        speed = self.base_speed
         for o in self.operators:
             if o:
                 speed += o.speed
-        return speed
+        if speed != self.speed:
+            self.speed = speed
+            dispatcher.send(signal=f"{self.location}.speed")
+
+
+class SubscribeMixin:
+    def subscribe(self, name, receiver):
+        for i in range(len(self.operators)):
+            dispatcher.connect(receiver=receiver, signal=f"{self.location}.{i}.{name}")
 
 
 class ControlCenter(Facility):
@@ -73,20 +86,61 @@ class PowerPlant(Facility):
         base.electricity_limit += self.electricity
 
 
-class TradingPost(Facility, ElectricityMixin):
+class PureGoldOrder:
+    time_table = {2: 144, 3: 210, 4: 276}
+    lmd_per_gold = 500
+
+    def __repr__(self):
+        return f"{self.count}赤金订单"
+
+    def __init__(self, probability_table):
+        self.count = random.choices(
+            list(probability_table.keys()),
+            weights=probability_table.values(),
+            k=1,
+        )[0]
+        self.total_time = self.time_table[self.count]
+        self.time = 0
+        self.lmd = self.lmd_per_gold * self.count
+
+
+class TradingPost(Facility, ElectricityMixin, SpeedMixin, SubscribeMixin):
+    orders = []
+
     def __init__(self, base, level, location):
         super().__init__(
             base=base,
             level=level,
             operators=[None] * level,
         )
-        self.limit = [6, 8, 10][level - 1]
-        self.speed = 1
+        self.base_limit = [6, 8, 10][level - 1]
+        self.limit = self.base_limit
         base.left_side[location] = self
+        self.location = location
         self.set_electricity()
+        self.probability_table = {
+            1: {2: 1, 3: 0, 4: 0},
+            2: {2: 0.6, 3: 0.4, 4: 0},
+            3: {2: 0.3, 3: 0.5, 4: 0.2},
+        }[level]
+        self.subscribe("limit", self.update_limit)
+        self.subscribe("speed", self.update_speed)
+
+    def new_order(self):
+        self.orders.append(PureGoldOrder(self.probability_table))
+        dispatcher.send(signal=f"{self.location}.orders")
+
+    def update_limit(self):
+        limit = self.base_limit
+        for o in self.operators:
+            if o:
+                limit += o.limit
+        if limit != self.limit:
+            self.limit = limit
+            dispatcher.send(signal=f"{self.location}.limit")
 
 
-class Factory(Facility, ElectricityMixin, SpeedMixin):
+class Factory(Facility, ElectricityMixin, SpeedMixin, SubscribeMixin):
     def __init__(self, base, level, location):
         super().__init__(
             base=base,
@@ -97,6 +151,7 @@ class Factory(Facility, ElectricityMixin, SpeedMixin):
         base.left_side[location] = self
         self.location = location
         self.set_electricity()
+        self.subscribe("speed", self.update_speed)
 
 
 class Dormitory(Facility, ElectricityMixin):

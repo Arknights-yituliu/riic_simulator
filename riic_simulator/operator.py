@@ -6,6 +6,7 @@ class Operator:
     skill_name = []
     speed = 0
     facility = None
+    limit = 0
 
     def __repr__(self):
         return self.name
@@ -13,60 +14,153 @@ class Operator:
     def __init__(self):
         self.name = self.__class__.__name__
 
-    def get_signals(self):
+    def get_sub(self):
         return [f"{self.name}.put"]
+
+    def get_pub(self):
+        return []
 
     def put(self, facility, index=None):
         self.facility = facility
         if not index:
             index = facility.operators.index(None)
         facility.operators[index] = self
-        for s in self.get_signals():
-            dispatcher.connect(self.skill, signal=s)
+        for s in self.get_sub():
+            dispatcher.connect(self.wrapper, signal=s)
         dispatcher.send(signal=f"{self.name}.put")
         dispatcher.send(signal=f"{self.facility.location}.operators")
 
     def remove(self):
-        for s in self.get_signals():
-            dispatcher.disconnect(self.skill, signal=s)
+        for s in self.get_sub():
+            dispatcher.disconnect(self.wrapper, signal=s)
         operators = self.facility.operators
         operators[operators.index(self)] = None
         dispatcher.send(signal=f"{self.facility.location}.operators")
         self.facility = None
 
+    def wrapper(self):
+        self.skill()
+        for p in self.get_pub():
+            dispatcher.send(signal=p)
+
+
+class Jaye(Operator):
+    # skill_name = ["摊贩经济"]
+    skill_name = ["摊贩经济", "市井之道"]
+
+    def get_sub(self):
+        location = self.facility.location
+        return [
+            f"{self.name}.put",
+            f"{location}.orders",
+            f"{location}.limit",
+            f"{location}.speed",
+        ]
+
+    def get_pub(self):
+        location = self.facility.location
+        index = self.facility.operators.index(self)
+        # return [f"{location}.{index}.speed"]
+        return [f"{location}.{index}.speed", f"{location}.{index}.limit"]
+
+    def skill(self):
+        print("不知道有没有适合摆摊的地方......")
+        print("进驻贸易站时，当前订单数与订单上限每差1笔订单，则订单获取效率+4%")
+        print("进驻贸易站时，当前贸易站内其他干员提供的每10%订单获取效率使订单上限-1（订单最少为1），同时每有1笔订单就+4%订单获取效率")
+        self.speed = 0
+        self.limit = 0
+        if isinstance(self.facility, TradingPost):
+            order_count = len(self.facility.orders)
+            order_limit = self.facility.limit
+            self.speed += (order_limit - order_count) * 0.04
+
+            other_speed = 0
+            for o in self.facility.operators:
+                if o and o != self:
+                    other_speed += o.speed
+            decrease = int(other_speed * 10)
+            if decrease >= order_limit:
+                decrease = order_limit - 1
+            self.limit -= decrease
+            self.speed += order_count * 0.04
+
 
 class Lappland(Operator):
+    skill_name = ["醉翁之意·β"]
+
+    def get_sub(self):
+        return [f"{self.facility.location}.operators"]
+
+    def get_pub(self):
+        location = self.facility.location
+        index = self.facility.operators.index(self)
+        return [f"{location}.{index}.limit"]
+
     def skill(self):
         print("咦？刚才一瞬间，好像看到了一个红色的影子。")
+        print("当与德克萨斯在同一个贸易站时，心情每小时消耗-0.1，订单上限+4")
+        self.limit = 0
+        if isinstance(self.facility, TradingPost):
+            for o in self.facility.operators:
+                if isinstance(o, Texas):
+                    self.limit = 4
+                    break
 
 
 class Texas(Operator):
+    skill_name = ["恩怨", "默契"]
+
+    def get_sub(self):
+        return [f"{self.facility.location}.operators"]
+
+    def get_pub(self):
+        location = self.facility.location
+        index = self.facility.operators.index(self)
+        return [f"{location}.{index}.speed"]
+
     def skill(self):
         print("这里需要补充物资吗？我可以帮忙。")
+        print("当与拉普兰德在同一个贸易站时，心情每小时消耗+0.3，订单获取效率+65%")
+        self.speed = 0
+        if isinstance(self.facility, TradingPost):
+            for o in self.facility.operators:
+                if isinstance(o, Lappland):
+                    self.speed = 0.65
+                    break
 
 
 class Mayer(Operator):
     skill_name = ["咪波·制造型"]
 
+    def get_pub(self):
+        location = self.facility.location
+        index = self.facility.operators.index(self)
+        return [f"{location}.{index}.speed"]
+
     def skill(self):
-        self.speed = 0
         print("我想要个新的工作室了！")
         print("进驻制造站时，生产力+30%")
+        self.speed = 0
         if isinstance(self.facility, Factory):
-            self.speed += 0.3
+            self.speed = 0.3
 
 
 class Dorothy(Operator):
     skill_name = ["莱茵科技·β", "源石技艺理论应用"]
 
-    def get_signals(self):
+    def get_sub(self):
         return [f"{self.facility.location}.operators"]
 
+    def get_pub(self):
+        location = self.facility.location
+        index = self.facility.operators.index(self)
+        return [f"{location}.{index}.speed"]
+
     def skill(self):
-        self.speed = 0
         print("罗德岛上真热闹啊。")
         print("进驻制造站时，当前制造站内每个莱茵科技类技能为自身+5%的生产力")
         print("进驻制造站时，生产力+25%")
+        self.speed = 0
         if isinstance(self.facility, Factory):
             for o in self.facility.operators:
                 if o and "莱茵科技·β" in o.skill_name:
@@ -77,9 +171,14 @@ class Dorothy(Operator):
 class Ptilopsis(Operator):
     skill_name = ["莱茵科技·β"]
 
+    def get_pub(self):
+        location = self.facility.location
+        index = self.facility.operators.index(self)
+        return [f"{location}.{index}.speed"]
+
     def skill(self):
-        self.speed = 0
         print("这个地方就像磁盘列阵一样吗？")
         print("进驻制造站时，生产力+25%")
+        self.speed = 0
         if isinstance(self.facility, Factory):
-            self.speed += 0.25
+            self.speed = 0.25

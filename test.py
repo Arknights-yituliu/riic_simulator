@@ -27,17 +27,30 @@ TrainingRoom(base, level=3)
 print(f"Electricity: {base.electricity}/{base.electricity_limit}")
 
 Mayer().put(base.left_side["B201"])
+
+print(base.left_side["B201"].operators)
+print(base.left_side["B201"].speed)
+
 Dorothy().put(base.left_side["B201"])
 
 print(base.left_side["B201"].operators)
-print(base.left_side["B201"].get_speed())
+print(base.left_side["B201"].speed)
 
 Ptilopsis().put(base.left_side["B201"])
 
 print(base.left_side["B201"].operators)
-print(base.left_side["B201"].get_speed())
+print(base.left_side["B201"].speed)
 
 base.left_side["B201"].operators[2].remove()
 
 print(base.left_side["B201"].operators)
-print(base.left_side["B201"].get_speed())
+print(base.left_side["B201"].speed)
+
+B102 = base.left_side["B102"]
+Jaye().put(B102)
+Lappland().put(B102)
+Texas().put(B102)
+for i in range(8):
+    print(f"订单数：{len(B102.orders)}/{B102.limit}，效率：{B102.speed}")
+    B102.new_order()
+print(B102.orders)
