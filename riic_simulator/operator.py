@@ -5,6 +5,10 @@ from pydispatch import dispatcher
 class Operator:
     skill_name = []
     speed = 0
+    facility = None
+
+    def __repr__(self):
+        return self.name
 
     def __init__(self):
         self.name = self.__class__.__name__
@@ -21,6 +25,14 @@ class Operator:
             dispatcher.connect(self.skill, signal=s)
         dispatcher.send(signal=f"{self.name}.put")
         dispatcher.send(signal=f"{self.facility.location}.operators")
+
+    def remove(self):
+        for s in self.get_signals():
+            dispatcher.disconnect(self.skill, signal=s)
+        operators = self.facility.operators
+        operators[operators.index(self)] = None
+        dispatcher.send(signal=f"{self.facility.location}.operators")
+        self.facility = None
 
 
 class Lappland(Operator):
