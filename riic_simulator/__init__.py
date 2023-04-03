@@ -2,7 +2,38 @@ import random
 from pydispatch import dispatcher
 
 
-class Base:
+class MessageMixin:
+    def sum(self, name):
+        result = getattr(self, name)["base"]
+        operators = getattr(self, name)["operators"]
+        for o in operators:
+            result += getattr(o, name)
+        old_value = getattr(self, name)["value"]
+        if old_value != result:
+            getattr(self, name)["value"] = result
+            dispatcher.send(signal=name)
+
+    def register(self, name, base=0):
+        if hasattr(self, name):
+            return
+        setattr(self, name, {"base": base, "value": base, "operators": []})
+        if not hasattr(self, func := f"sum_{name}"):
+            setattr(self, func, lambda: self.sum(name))
+        dispatcher.connect(receiver=getattr(self, func), signal=name)
+
+    def add_operator(self, name, operator):
+        if not hasattr(self, name):
+            self.register(name)
+        operators = getattr(self, name)["operators"]
+        operators.append(operator)
+
+    def remove_operator(self, name, operator):
+        operators = getattr(self, name)["operators"]
+        operators.remove(operator)
+        dispatcher.send(signal=name)
+
+
+class Base(MessageMixin):
     def __init__(self):
         self.drone = 0
         self.drone_limit = 0
@@ -15,7 +46,6 @@ class Base:
         self.workshop = None
         self.office = None
         self.training = None
-        self.extra = {}
 
 
 class Facility:

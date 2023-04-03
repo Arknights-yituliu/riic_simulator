@@ -27,12 +27,20 @@ class Operator:
         facility.operators[index] = self
         for s in self.get_sub():
             dispatcher.connect(self.wrapper, signal=s)
+            if "." not in s:
+                self.facility.base.register(s)
+        for s in self.get_pub():
+            if "." not in s:
+                self.facility.base.add_operator(s, self)
         dispatcher.send(signal=f"{self.name}.put")
         dispatcher.send(signal=f"{self.facility.location}.operators")
 
     def remove(self):
         for s in self.get_sub():
             dispatcher.disconnect(self.wrapper, signal=s)
+        for s in self.get_pub():
+            if "." not in s:
+                self.facility.base.remove_operator(s, self)
         operators = self.facility.operators
         operators[operators.index(self)] = None
         dispatcher.send(signal=f"{self.facility.location}.operators")
@@ -206,7 +214,6 @@ class Mizuki(Operator):
             self.speed += 0.25
 
 
-
 class KirinXYato(Operator):
     skill_name = ["耐力回复"]
 
@@ -216,10 +223,9 @@ class KirinXYato(Operator):
     def skill(self):
         print("我希望承担更为艰巨的任务，但如果这是您的安排，我愿意去做。")
         print("进驻控制中枢时，自身心情每小时消耗+0.5，木天蓼+8")
+        self.木天蓼 = 0
         if isinstance(self.facility, ControlCenter):
-            extra = self.facility.base.extra
-            extra.setdefault("木天蓼", 0)
-            extra["木天蓼"] += 8
+            self.木天蓼 = 8
 
 
 class RathalosSNoirCorne(Operator):
@@ -234,14 +240,13 @@ class RathalosSNoirCorne(Operator):
     def skill(self):
         print("小心，小心，让俺先把刀收起来。")
         print("进驻控制中枢时，控制中枢内每有1名怪物猎人小队干员，则木天蓼+2")
+        self.木天蓼 = 0
         if isinstance(self.facility, ControlCenter):
             mh_team = [KirinXYato, RathalosSNoirCorne, TerraResearchCommission]
-            extra = self.facility.base.extra
             for o in self.facility.operators:
                 for oc in mh_team:
                     if isinstance(o, oc):
-                        extra.setdefault("木天蓼", 0)
-                        extra["木天蓼"] += 2
+                        self.木天蓼 += 2
                         break
 
 
@@ -264,7 +269,6 @@ class TerraResearchCommission(Operator):
         if isinstance(self.facility, TradingPost):
             self.speed += 0.05
             self.limit += 2
-            extra = self.facility.base.extra
-            extra.setdefault("木天蓼", 0)
-            count = extra["木天蓼"]
+            base = self.facility.base
+            count = base.木天蓼["value"]
             self.speed += 0.03 * count

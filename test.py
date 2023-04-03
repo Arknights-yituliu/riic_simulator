@@ -26,38 +26,40 @@ TrainingRoom(base, level=3)
 
 print(f"Electricity: {base.electricity}/{base.electricity_limit}")
 
-Mayer().put(base.left_side["B201"])
+# Mayer().put(base.left_side["B201"])
 
-print(base.left_side["B201"].operators)
-print(base.left_side["B201"].speed)
+# print(base.left_side["B201"].operators)
+# print(base.left_side["B201"].speed)
 
-Dorothy().put(base.left_side["B201"])
+# Dorothy().put(base.left_side["B201"])
 
-print(base.left_side["B201"].operators)
-print(base.left_side["B201"].speed)
+# print(base.left_side["B201"].operators)
+# print(base.left_side["B201"].speed)
 
-Ptilopsis().put(base.left_side["B201"])
+# Ptilopsis().put(base.left_side["B201"])
 
-print(base.left_side["B201"].operators)
-print(base.left_side["B201"].speed)
+# print(base.left_side["B201"].operators)
+# print(base.left_side["B201"].speed)
 
-base.left_side["B201"].operators[2].remove()
+# base.left_side["B201"].operators[2].remove()
 
-print(base.left_side["B201"].operators)
-print(base.left_side["B201"].speed)
+# print(base.left_side["B201"].operators)
+# print(base.left_side["B201"].speed)
 
-B102 = base.left_side["B102"]
-Jaye().put(B102)
-Lappland().put(B102)
-Texas().put(B102)
-for i in range(8):
-    print(f"订单数：{len(B102.orders)}/{B102.limit}，效率：{B102.speed}")
-    B102.new_order()
-print(B102.orders)
+# B102 = base.left_side["B102"]
+# Jaye().put(B102)
+# Lappland().put(B102)
+# Texas().put(B102)
+# for i in range(8):
+#     print(f"订单数：{len(B102.orders)}/{B102.limit}，效率：{B102.speed}")
+#     B102.new_order()
+# print(B102.orders)
 
 B101 = base.left_side["B101"]
 control_center = base.control_center
 TerraResearchCommission().put(B101)
+print(f"木天蓼数量：{base.木天蓼['value']}，B101的效率是{B101.speed}，订单上限是{B101.limit}")
 KirinXYato().put(control_center)
+print(f"木天蓼数量：{base.木天蓼['value']}，B101的效率是{B101.speed}，订单上限是{B101.limit}")
 RathalosSNoirCorne().put(control_center)
-print(f"木天蓼数量：{base.extra['木天蓼']}，B101的效率是{B101.speed}，订单上限是{B101.limit}")
+print(f"木天蓼数量：{base.木天蓼['value']}，B101的效率是{B101.speed}，订单上限是{B101.limit}")
