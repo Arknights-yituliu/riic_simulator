@@ -1,55 +1,52 @@
-from riic_simulator import *
+from riic_simulator.facility import Factory
+from riic_simulator.mixin import SkillMixin
 from pydispatch import dispatcher
 
 
-class Operator:
-    skill_name = []
-    speed = 0
-    facility = None
-    limit = 0
-
+class Operator(SkillMixin):
     def __repr__(self):
+        if hasattr(self, "facility") and isinstance(self.facility, Factory):
+            return f"{self.name}({self.speed})"
         return self.name
 
     def __init__(self):
         self.name = self.__class__.__name__
-
-    def get_sub(self):
-        return [f"{self.name}.put"]
-
-    def get_pub(self):
-        return []
+        self.extra = {}
 
     def put(self, facility, index=None):
         self.facility = facility
+        if hasattr(self, "get_sub"):
+            self.sub = self.get_sub()
+        elif not hasattr(self, "sub"):
+            self.sub = []
+        if hasattr(self, "get_pub"):
+            self.pub = self.get_pub()
+        elif not hasattr(self, "pub"):
+            self.pub = []
         if not index:
             index = facility.operators.index(None)
         facility.operators[index] = self
-        for s in self.get_sub():
-            dispatcher.connect(self.wrapper, signal=s)
-            if "." not in s:
-                self.facility.base.register(s)
-        for s in self.get_pub():
-            if "." not in s:
-                self.facility.base.add_operator(s, self)
-        dispatcher.send(signal=f"{self.name}.put")
+        for s in self.sub:
+            facility, location, name = self.parse(s)
+            if name != "operators":
+                facility.register(s)
+            dispatcher.connect(self.wrapper, signal=f"{location}.{name}")
+        for s in self.pub:
+            facility, location, name = self.parse(s)
+            if name != "operators":
+                facility.add_item(f"{location}.{name}", self)
+        self.wrapper()
         dispatcher.send(signal=f"{self.facility.location}.operators")
 
     def remove(self):
         for s in self.get_sub():
             dispatcher.disconnect(self.wrapper, signal=s)
         for s in self.get_pub():
-            if "." not in s:
-                self.facility.base.remove_operator(s, self)
+            self.parse_facility(s).remove_item(s, self)
         operators = self.facility.operators
         operators[operators.index(self)] = None
         dispatcher.send(signal=f"{self.facility.location}.operators")
         self.facility = None
-
-    def wrapper(self):
-        self.skill()
-        for p in self.get_pub():
-            dispatcher.send(signal=p)
 
 
 class Jaye(Operator):
@@ -139,11 +136,7 @@ class Texas(Operator):
 
 class Mayer(Operator):
     skill_name = ["咪波·制造型"]
-
-    def get_pub(self):
-        location = self.facility.location
-        index = self.facility.operators.index(self)
-        return [f"{location}.{index}.speed"]
+    pub = ["facility.speed"]
 
     def skill(self):
         print("我想要个新的工作室了！")
@@ -154,15 +147,10 @@ class Mayer(Operator):
 
 
 class Dorothy(Operator):
+    sub = ["facility.operators"]
+    pub = ["facility.speed"]
+
     skill_name = ["莱茵科技·β", "源石技艺理论应用"]
-
-    def get_sub(self):
-        return [f"{self.facility.location}.operators"]
-
-    def get_pub(self):
-        location = self.facility.location
-        index = self.facility.operators.index(self)
-        return [f"{location}.{index}.speed"]
 
     def skill(self):
         print("罗德岛上真热闹啊。")
@@ -178,11 +166,7 @@ class Dorothy(Operator):
 
 class Ptilopsis(Operator):
     skill_name = ["莱茵科技·β"]
-
-    def get_pub(self):
-        location = self.facility.location
-        index = self.facility.operators.index(self)
-        return [f"{location}.{index}.speed"]
+    pub = ["facility.speed"]
 
     def skill(self):
         print("这个地方就像磁盘列阵一样吗？")
@@ -270,5 +254,5 @@ class TerraResearchCommission(Operator):
             self.speed += 0.05
             self.limit += 2
             base = self.facility.base
-            count = base.木天蓼["value"]
+            count = base.extra["木天蓼"]["value"]
             self.speed += 0.03 * count

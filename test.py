@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-from riic_simulator import *
+from riic_simulator.base import Base
+from riic_simulator.facility import *
 from riic_simulator.operator import *
 
 base = Base()
@@ -26,17 +27,15 @@ TrainingRoom(base, level=3)
 
 print(f"Electricity: {base.electricity}/{base.electricity_limit}")
 
-# Mayer().put(base.left_side["B201"])
+B201 = base.left_side["B201"]
+print(B201.extra)
+Mayer().put(B201)
+print(B201.extra)
+Dorothy().put(B201)
+print(B201.extra)
+Ptilopsis().put(B201)
+print(B201.extra)
 
-# print(base.left_side["B201"].operators)
-# print(base.left_side["B201"].speed)
-
-# Dorothy().put(base.left_side["B201"])
-
-# print(base.left_side["B201"].operators)
-# print(base.left_side["B201"].speed)
-
-# Ptilopsis().put(base.left_side["B201"])
 
 # print(base.left_side["B201"].operators)
 # print(base.left_side["B201"].speed)
@@ -55,11 +54,9 @@ print(f"Electricity: {base.electricity}/{base.electricity_limit}")
 #     B102.new_order()
 # print(B102.orders)
 
-B101 = base.left_side["B101"]
-control_center = base.control_center
-TerraResearchCommission().put(B101)
-print(f"木天蓼数量：{base.木天蓼['value']}，B101的效率是{B101.speed}，订单上限是{B101.limit}")
-KirinXYato().put(control_center)
-print(f"木天蓼数量：{base.木天蓼['value']}，B101的效率是{B101.speed}，订单上限是{B101.limit}")
-RathalosSNoirCorne().put(control_center)
-print(f"木天蓼数量：{base.木天蓼['value']}，B101的效率是{B101.speed}，订单上限是{B101.limit}")
+# B101 = base.left_side["B101"]
+# control_center = base.control_center
+# TerraResearchCommission().put(B101)
+# KirinXYato().put(control_center)
+# RathalosSNoirCorne().put(control_center)
+# print(f"木天蓼数量：{base.extra['木天蓼']['value']}，B101的效率是{B101.speed}，订单上限是{B101.limit}")
