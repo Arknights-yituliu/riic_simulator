@@ -41,10 +41,16 @@ class Operator(SkillMixin):
         self.wrapper()
 
     def remove(self):
-        for s in self.get_sub():
-            dispatcher.disconnect(self.wrapper, signal=s)
-        for s in self.get_pub():
-            self.parse_facility(s).remove_item(s, self)
+        for s in self.sub:
+            _, location, name = self.parse(s)
+            signal = f"{location}.{name}"
+            dispatcher.disconnect(self.wrapper, signal=signal)
+        for s in self.pub:
+            facility, location, name = self.parse(s)
+            signal = f"{location}.{name}"
+            if name != "operators":
+                facility.remove_item(signal, self)
+            dispatcher.send(signal=f"{location}.{name}")
         operators = self.facility.operators
         operators[operators.index(self)] = None
         dispatcher.send(signal=f"{self.facility.location}.operators")

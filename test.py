@@ -48,6 +48,11 @@ B101 = base.left_side["B101"]
 control_center = base.control_center
 TerraResearchCommission().put(B101)
 KirinXYato().put(control_center)
+print(base.extra)
+print(B101.extra)
 RathalosSNoirCorne().put(control_center)
+print(base.extra)
+print(B101.extra)
+control_center.operators[0].remove()
 print(base.extra)
 print(B101.extra)
