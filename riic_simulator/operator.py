@@ -1,9 +1,9 @@
 from riic_simulator.facility import Factory, TradingPost, ControlCenter
-from riic_simulator.mixin import SkillMixin
+from riic_simulator.mixin import SkillMixin, MessageMixin
 from pydispatch import dispatcher
 
 
-class Operator(SkillMixin):
+class Operator(SkillMixin, MessageMixin):
     def __repr__(self):
         if hasattr(self, "facility") and isinstance(self.facility, Factory):
             return f"{self.name}({self.speed})"
@@ -12,6 +12,8 @@ class Operator(SkillMixin):
     def __init__(self):
         self.name = self.__class__.__name__
         self.extra = {}
+        self.add_item(f"{self.name}.morale_drain_redution", self)
+        self.add_item(f"{self.name}.morale_increase", self)
 
     def put(self, facility, index=None):
         self.facility = facility
@@ -45,15 +47,15 @@ class Operator(SkillMixin):
             _, location, name = self.parse(s)
             signal = f"{location}.{name}"
             dispatcher.disconnect(self.wrapper, signal=signal)
+        operators = self.facility.operators
+        operators[operators.index(self)] = None
+        dispatcher.send(signal=f"{self.facility.location}.operators")
         for s in self.pub:
             facility, location, name = self.parse(s)
             signal = f"{location}.{name}"
             if name != "operators":
                 facility.remove_item(signal, self)
             dispatcher.send(signal=f"{location}.{name}")
-        operators = self.facility.operators
-        operators[operators.index(self)] = None
-        dispatcher.send(signal=f"{self.facility.location}.operators")
         self.facility = None
 
 
@@ -72,17 +74,17 @@ class Jaye(Operator):
         if isinstance(self.facility, TradingPost):
             order_count = len(self.facility.orders)
             order_limit = self.facility.extra["limit"]["value"]
-            self.speed += (order_limit - order_count) * 0.04
+            self.speed += (order_limit - order_count) * 4
 
             other_speed = 0
             for o in self.facility.operators:
                 if o and o != self and hasattr(o, "speed"):
                     other_speed += o.speed
-            decrease = int(other_speed * 10)
+            decrease = int(other_speed / 10)
             if decrease >= order_limit:
                 decrease = order_limit - 1
             self.limit -= decrease
-            self.speed += order_count * 0.04
+            self.speed += order_count * 4
 
 
 class Lappland(Operator):
@@ -113,7 +115,7 @@ class Texas(Operator):
         if isinstance(self.facility, TradingPost):
             for o in self.facility.operators:
                 if isinstance(o, Lappland):
-                    self.speed = 0.65
+                    self.speed = 65
                     break
 
 
@@ -126,7 +128,7 @@ class Mayer(Operator):
         print("进驻制造站时，生产力+30%")
         self.speed = 0
         if isinstance(self.facility, Factory):
-            self.speed = 0.3
+            self.speed = 30
 
 
 class Dorothy(Operator):
@@ -143,8 +145,8 @@ class Dorothy(Operator):
         if isinstance(self.facility, Factory):
             for o in self.facility.operators:
                 if o and "莱茵科技·β" in o.skill_name:
-                    self.speed += 0.05
-            self.speed += 0.25
+                    self.speed += 5
+            self.speed += 25
 
 
 class Ptilopsis(Operator):
@@ -156,7 +158,7 @@ class Ptilopsis(Operator):
         print("进驻制造站时，生产力+25%")
         self.speed = 0
         if isinstance(self.facility, Factory):
-            self.speed = 0.25
+            self.speed = 25
 
 
 class Mizuki(Operator):
@@ -177,8 +179,8 @@ class Mizuki(Operator):
         if isinstance(self.facility, Factory):
             for o in self.facility.operators:
                 if o and ("标准化·α" in o.skill_name or "标准化·β" in o.skill_name):
-                    self.speed += 0.05
-            self.speed += 0.25
+                    self.speed += 5
+            self.speed += 25
 
 
 class KirinXYato(Operator):
@@ -222,8 +224,20 @@ class TerraResearchCommission(Operator):
         self.speed = 0
         self.limit = 0
         if isinstance(self.facility, TradingPost):
-            self.speed += 0.05
+            self.speed += 5
             self.limit += 2
             base = self.facility.base
             count = base.extra["木天蓼"]["value"]
-            self.speed += 0.03 * count
+            self.speed += 3 * count
+
+
+class Sora(Operator):
+    skill_name = ["企鹅物流·β"]
+    pub = ["facility.speed"]
+
+    def skill(self):
+        print("这里比企鹅物流的宿舍要大上好多呢！")
+        print("进驻贸易站时，订单获取效率+30%")
+        self.speed = 0
+        if isinstance(self.facility, TradingPost):
+            self.speed = 30

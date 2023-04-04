@@ -28,12 +28,6 @@ class ElectricityMixin:
         self.base.electricity += self.electricity
 
 
-class SubscribeMixin:
-    def subscribe(self, name, receiver):
-        for i in range(len(self.operators)):
-            dispatcher.connect(receiver=receiver, signal=f"{self.location}.{i}.{name}")
-
-
 class ControlCenter(Facility):
     def __init__(self, base, level):
         super().__init__(
@@ -123,7 +117,7 @@ class TradingPost(Facility, ElectricityMixin, MessageMixin, SkillMixin):
         for o in self.operators:
             if o:
                 count += 1
-        self.speed = 1 + count * 0.01 if count > 0 else 0
+        self.speed = 100 + count if count > 0 else 0
 
 
 class Factory(Facility, ElectricityMixin, MessageMixin, SkillMixin):
@@ -154,7 +148,7 @@ class Factory(Facility, ElectricityMixin, MessageMixin, SkillMixin):
         for o in self.operators:
             if o:
                 count += 1
-        self.speed = 1 + count * 0.01 if count > 0 else 0
+        self.speed = 100 + count if count > 0 else 0
 
 
 class Dormitory(Facility, ElectricityMixin):
