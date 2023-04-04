@@ -28,35 +28,26 @@ TrainingRoom(base, level=3)
 print(f"Electricity: {base.electricity}/{base.electricity_limit}")
 
 B201 = base.left_side["B201"]
-print(B201.extra)
 Mayer().put(B201)
-print(B201.extra)
 Dorothy().put(B201)
-print(B201.extra)
 Ptilopsis().put(B201)
 print(B201.extra)
 
 
-# print(base.left_side["B201"].operators)
-# print(base.left_side["B201"].speed)
+B102 = base.left_side["B102"]
+Jaye().put(B102)
+Lappland().put(B102)
+Texas().put(B102)
+print(B102.extra)
 
-# base.left_side["B201"].operators[2].remove()
+for i in range(8):
+    B102.new_order()
+    print(B102.extra)
 
-# print(base.left_side["B201"].operators)
-# print(base.left_side["B201"].speed)
-
-# B102 = base.left_side["B102"]
-# Jaye().put(B102)
-# Lappland().put(B102)
-# Texas().put(B102)
-# for i in range(8):
-#     print(f"订单数：{len(B102.orders)}/{B102.limit}，效率：{B102.speed}")
-#     B102.new_order()
-# print(B102.orders)
-
-# B101 = base.left_side["B101"]
-# control_center = base.control_center
-# TerraResearchCommission().put(B101)
-# KirinXYato().put(control_center)
-# RathalosSNoirCorne().put(control_center)
-# print(f"木天蓼数量：{base.extra['木天蓼']['value']}，B101的效率是{B101.speed}，订单上限是{B101.limit}")
+B101 = base.left_side["B101"]
+control_center = base.control_center
+TerraResearchCommission().put(B101)
+KirinXYato().put(control_center)
+RathalosSNoirCorne().put(control_center)
+print(base.extra)
+print(B101.extra)

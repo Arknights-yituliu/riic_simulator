@@ -34,7 +34,8 @@ class MessageMixin(SignalNameMixin):
         name = self.short_name(signal)
         result = 0
         for o in self.extra[name]["items"]:
-            result += getattr(o, name)
+            if hasattr(o, name):
+                result += getattr(o, name)
         old_value = self.extra[name]["value"]
         if old_value != result:
             self.extra[name]["value"] = result
@@ -47,7 +48,7 @@ class MessageMixin(SignalNameMixin):
         self.extra[name] = {"value": 0, "items": []}
         func = f"sum_{name}"
         if not hasattr(self, func):
-            setattr(self, func, lambda: self.sum(name))
+            setattr(self, func, lambda: self.sum(signal))
         dispatcher.connect(receiver=getattr(self, func), signal=signal)
 
     def add_item(self, signal, obj):

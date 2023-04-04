@@ -1,4 +1,4 @@
-from riic_simulator.mixin import MessageMixin, SkillMixin
+from riic_simulator.mixin import MessageMixin
 
 
 class Base(MessageMixin):
@@ -12,3 +12,4 @@ class Base(MessageMixin):
         self.workshop = None
         self.office = None
         self.training = None
+        self.extra = {}

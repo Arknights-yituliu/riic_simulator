@@ -1,4 +1,4 @@
-from riic_simulator.facility import Factory
+from riic_simulator.facility import Factory, TradingPost, ControlCenter
 from riic_simulator.mixin import SkillMixin
 from pydispatch import dispatcher
 
@@ -28,15 +28,17 @@ class Operator(SkillMixin):
         facility.operators[index] = self
         for s in self.sub:
             facility, location, name = self.parse(s)
+            signal = f"{location}.{name}"
             if name != "operators":
-                facility.register(s)
-            dispatcher.connect(self.wrapper, signal=f"{location}.{name}")
+                facility.register(signal)
+            dispatcher.connect(self.wrapper, signal=signal)
         for s in self.pub:
             facility, location, name = self.parse(s)
+            signal = f"{location}.{name}"
             if name != "operators":
-                facility.add_item(f"{location}.{name}", self)
-        self.wrapper()
+                facility.add_item(signal, self)
         dispatcher.send(signal=f"{self.facility.location}.operators")
+        self.wrapper()
 
     def remove(self):
         for s in self.get_sub():
@@ -52,21 +54,8 @@ class Operator(SkillMixin):
 class Jaye(Operator):
     # skill_name = ["摊贩经济"]
     skill_name = ["摊贩经济", "市井之道"]
-
-    def get_sub(self):
-        location = self.facility.location
-        return [
-            f"{self.name}.put",
-            f"{location}.orders",
-            f"{location}.limit",
-            f"{location}.speed",
-        ]
-
-    def get_pub(self):
-        location = self.facility.location
-        index = self.facility.operators.index(self)
-        # return [f"{location}.{index}.speed"]
-        return [f"{location}.{index}.speed", f"{location}.{index}.limit"]
+    sub = ["facility.speed", "facility.limit", "facility.orders"]
+    pub = ["facility.speed", "facility.limit"]
 
     def skill(self):
         print("不知道有没有适合摆摊的地方......")
@@ -76,12 +65,12 @@ class Jaye(Operator):
         self.limit = 0
         if isinstance(self.facility, TradingPost):
             order_count = len(self.facility.orders)
-            order_limit = self.facility.limit
+            order_limit = self.facility.extra["limit"]["value"]
             self.speed += (order_limit - order_count) * 0.04
 
             other_speed = 0
             for o in self.facility.operators:
-                if o and o != self:
+                if o and o != self and hasattr(o, "speed"):
                     other_speed += o.speed
             decrease = int(other_speed * 10)
             if decrease >= order_limit:
@@ -92,14 +81,8 @@ class Jaye(Operator):
 
 class Lappland(Operator):
     skill_name = ["醉翁之意·β"]
-
-    def get_sub(self):
-        return [f"{self.facility.location}.operators"]
-
-    def get_pub(self):
-        location = self.facility.location
-        index = self.facility.operators.index(self)
-        return [f"{location}.{index}.limit"]
+    sub = ["facility.operators"]
+    pub = ["facility.limit"]
 
     def skill(self):
         print("咦？刚才一瞬间，好像看到了一个红色的影子。")
@@ -114,14 +97,8 @@ class Lappland(Operator):
 
 class Texas(Operator):
     skill_name = ["恩怨", "默契"]
-
-    def get_sub(self):
-        return [f"{self.facility.location}.operators"]
-
-    def get_pub(self):
-        location = self.facility.location
-        index = self.facility.operators.index(self)
-        return [f"{location}.{index}.speed"]
+    sub = ["facility.operators"]
+    pub = ["facility.speed"]
 
     def skill(self):
         print("这里需要补充物资吗？我可以帮忙。")
@@ -200,9 +177,7 @@ class Mizuki(Operator):
 
 class KirinXYato(Operator):
     skill_name = ["耐力回复"]
-
-    def get_pub(self):
-        return ["木天蓼"]
+    pub = ["木天蓼"]
 
     def skill(self):
         print("我希望承担更为艰巨的任务，但如果这是您的安排，我愿意去做。")
@@ -214,12 +189,8 @@ class KirinXYato(Operator):
 
 class RathalosSNoirCorne(Operator):
     skill_name = ["团队合作"]
-
-    def get_sub(self):
-        return [f"{self.facility.location}.operators"]
-
-    def get_pub(self):
-        return ["木天蓼"]
+    sub = ["facility.operators"]
+    pub = ["木天蓼"]
 
     def skill(self):
         print("小心，小心，让俺先把刀收起来。")
@@ -236,14 +207,8 @@ class RathalosSNoirCorne(Operator):
 
 class TerraResearchCommission(Operator):
     skill_name = ["可爱的艾露猫"]
-
-    def get_sub(self):
-        return [f"{self.name}.put", "木天蓼"]
-
-    def get_pub(self):
-        location = self.facility.location
-        index = self.facility.operators.index(self)
-        return [f"{location}.{index}.speed", f"{location}.{index}.limit"]
+    sub = ["木天蓼"]
+    pub = ["facility.speed", "facility.limit"]
 
     def skill(self):
         print("拖，拖喵......小工匠，你怎么去哪里都带着一大堆材料喵？")

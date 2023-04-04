@@ -28,20 +28,6 @@ class ElectricityMixin:
         self.base.electricity += self.electricity
 
 
-class SpeedMixin:
-    speed = 1
-    base_speed = 1
-
-    def update_speed(self):
-        speed = self.base_speed
-        for o in self.operators:
-            if o:
-                speed += o.speed
-        if speed != self.speed:
-            self.speed = speed
-            dispatcher.send(signal=f"{self.location}.speed")
-
-
 class SubscribeMixin:
     def subscribe(self, name, receiver):
         for i in range(len(self.operators)):
@@ -95,44 +81,8 @@ class PureGoldOrder:
         self.lmd = self.lmd_per_gold * self.count
 
 
-class TradingPost(Facility, ElectricityMixin, SpeedMixin, SubscribeMixin):
-    orders = []
-
-    def __init__(self, base, level, location):
-        super().__init__(
-            base=base,
-            level=level,
-            location=location,
-            operators=[None] * level,
-        )
-        self.base_limit = [6, 8, 10][level - 1]
-        self.limit = self.base_limit
-        base.left_side[location] = self
-        self.set_electricity()
-        self.probability_table = {
-            1: {2: 1, 3: 0, 4: 0},
-            2: {2: 0.6, 3: 0.4, 4: 0},
-            3: {2: 0.3, 3: 0.5, 4: 0.2},
-        }[level]
-        self.subscribe("limit", self.update_limit)
-        self.subscribe("speed", self.update_speed)
-
-    def new_order(self):
-        self.orders.append(PureGoldOrder(self.probability_table))
-        dispatcher.send(signal=f"{self.location}.orders")
-
-    def update_limit(self):
-        limit = self.base_limit
-        for o in self.operators:
-            if o:
-                limit += o.limit
-        if limit != self.limit:
-            self.limit = limit
-            dispatcher.send(signal=f"{self.location}.limit")
-
-
-class Factory(Facility, ElectricityMixin, MessageMixin, SkillMixin):
-    pub = ["facility.speed"]
+class TradingPost(Facility, ElectricityMixin, MessageMixin, SkillMixin):
+    pub = ["facility.speed", "facility.orders", "facility.limit"]
 
     def __repr__(self):
         return f"{self.__class__.__name__}@{self.location}"
@@ -144,7 +94,52 @@ class Factory(Facility, ElectricityMixin, MessageMixin, SkillMixin):
             location=location,
             operators=[None] * level,
         )
-        self.capacity = [24, 36, 54][level - 1]
+        base.left_side[location] = self
+        self.set_electricity()
+        self.probability_table = {
+            1: {2: 1, 3: 0, 4: 0},
+            2: {2: 0.6, 3: 0.4, 4: 0},
+            3: {2: 0.3, 3: 0.5, 4: 0.2},
+        }[level]
+        self.orders = []
+        self.limit = [6, 8, 10][self.level - 1]
+
+        signal = f"{self.location}.operators"
+        dispatcher.connect(self.wrapper, signal=signal)
+        self.add_item(f"{self.location}.speed", self)
+        self.add_item(f"{self.location}.limit", self)
+        dispatcher.send(signal=signal)
+
+    def new_order(self):
+        self.orders.append(PureGoldOrder(self.probability_table))
+        dispatcher.send(signal=f"{self.location}.orders")
+
+    def sum_orders(self):
+        pass
+
+    def skill(self):
+        print("获取订单效率（默认值：1），每进驻1名干员即可获得1%的基础加成。")
+        count = 0
+        for o in self.operators:
+            if o:
+                count += 1
+        self.speed = 1 + count * 0.01 if count > 0 else 0
+
+
+class Factory(Facility, ElectricityMixin, MessageMixin, SkillMixin):
+    pub = ["facility.speed", "facility.limit"]
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}@{self.location}"
+
+    def __init__(self, base, level, location):
+        super().__init__(
+            base=base,
+            level=level,
+            location=location,
+            operators=[None] * level,
+        )
+        self.limit = [24, 36, 54][level - 1]
         base.left_side[location] = self
         self.set_electricity()
 
@@ -154,7 +149,7 @@ class Factory(Facility, ElectricityMixin, MessageMixin, SkillMixin):
         dispatcher.send(signal=signal)
 
     def skill(self):
-        print("每进驻1名干员即可获得1%的基础加成。")
+        print("生产力（默认值：1）每进驻1名干员即可获得1%的基础加成。")
         count = 0
         for o in self.operators:
             if o:
