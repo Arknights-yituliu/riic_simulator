@@ -77,6 +77,8 @@ class PowerPlant(Facility, SkillMixin):
             operators=[None],
         )
         base.left_side[location] = self
+        signal = f"{self.location}.operators"
+        dispatcher.connect(self.wrapper, signal=signal)
         for i in self.pub:
             self.base.add_item(i, self)
         self.wrapper()

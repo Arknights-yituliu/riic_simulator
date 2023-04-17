@@ -258,3 +258,12 @@ class Kaltsit(Operator):
         print("进驻控制中枢时，所有制造站生产力+2%（同种效果取最高）")
         self.efficiency = 2
 
+
+class GoldenGlow(Operator):
+    skill_name = ["电荷释放 "]
+    pub = ["base.drone_recover"]
+
+    def skill(self):
+        print("得离电器远一点......")
+        print("进驻发电站时，无人机充能速度+20%")
+        self.drone_recover = 20
