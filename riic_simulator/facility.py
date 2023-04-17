@@ -2,6 +2,18 @@ import random
 from pydispatch import dispatcher
 from riic_simulator.mixin import *
 
+class Base(MessageMixin):
+    def __init__(self):
+        self.electricity = 0
+        self.electricity_limit = 0
+        self.control_center = None
+        self.dormitories = [None] * 4
+        self.left_side = {}
+        self.reception = None
+        self.workshop = None
+        self.office = None
+        self.training = None
+        self.extra = {}
 
 class Facility:
     def __init__(
@@ -76,7 +88,7 @@ class PureGoldOrder:
 
 
 class TradingPost(Facility, ElectricityMixin, MessageMixin, SkillMixin):
-    pub = ["facility.speed", "facility.orders", "facility.limit"]
+    pub = ["facility.efficiency", "facility.orders", "facility.limit"]
 
     def __repr__(self):
         return f"{self.__class__.__name__}@{self.location}"
@@ -100,7 +112,7 @@ class TradingPost(Facility, ElectricityMixin, MessageMixin, SkillMixin):
 
         signal = f"{self.location}.operators"
         dispatcher.connect(self.wrapper, signal=signal)
-        self.add_item(f"{self.location}.speed", self)
+        self.add_item(f"{self.location}.efficiency", self)
         self.add_item(f"{self.location}.limit", self)
         dispatcher.send(signal=signal)
 
@@ -117,11 +129,11 @@ class TradingPost(Facility, ElectricityMixin, MessageMixin, SkillMixin):
         for o in self.operators:
             if o:
                 count += 1
-        self.speed = 100 + count if count > 0 else 0
+        self.efficiency = 100 + count if count > 0 else 0
 
 
 class Factory(Facility, ElectricityMixin, MessageMixin, SkillMixin):
-    pub = ["facility.speed", "facility.limit"]
+    pub = ["facility.efficiency", "facility.limit"]
 
     def __repr__(self):
         return f"{self.__class__.__name__}@{self.location}"
@@ -139,7 +151,7 @@ class Factory(Facility, ElectricityMixin, MessageMixin, SkillMixin):
 
         signal = f"{self.location}.operators"
         dispatcher.connect(self.wrapper, signal=signal)
-        self.add_item(f"{self.location}.speed", self)
+        self.add_item(f"{self.location}.efficiency", self)
         dispatcher.send(signal=signal)
 
     def skill(self):
@@ -148,7 +160,7 @@ class Factory(Facility, ElectricityMixin, MessageMixin, SkillMixin):
         for o in self.operators:
             if o:
                 count += 1
-        self.speed = 100 + count if count > 0 else 0
+        self.efficiency = 100 + count if count > 0 else 0
 
 
 class Dormitory(Facility, ElectricityMixin):
