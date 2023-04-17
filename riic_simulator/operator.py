@@ -1,4 +1,4 @@
-from riic_simulator.facility import Factory, TradingPost, ControlCenter
+from riic_simulator.facility import Factory, TradingPost, ControlCenter, PowerPlant
 from riic_simulator.mixin import SkillMixin, MessageMixin
 from pydispatch import dispatcher
 
@@ -266,4 +266,142 @@ class GoldenGlow(Operator):
     def skill(self):
         print("得离电器远一点......")
         print("进驻发电站时，无人机充能速度+20%")
-        self.drone_recover = 20
+        self.drone_recover = 0
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 20
+
+
+class Liskarm(Operator):
+    skill_name = ["脉冲电弧·β"]
+    pub = ["base.drone_recover"]
+
+    def skill(self):
+        print("这房间会漏电吗？有没有做好保护措施？")
+        print("进驻发电站时，无人机充能速度+20%")
+        self.drone_recover = 0
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 20
+
+
+class LavaThePurgatory(Operator):
+    skill_name = ["热能充能·γ"]
+    pub = ["base.drone_recover"]
+
+    def skill(self):
+        print("我还有许多事要做，就让我待在这里吧。")
+        print("进驻发电站时，无人机充能速度+20%")
+        self.drone_recover = 0
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 20
+
+
+class Greyy(Operator):
+    skill_name = ["静电场"]
+    pub = ["base.drone_recover"]
+
+    def skill(self):
+        print("今天要做什么呢？")
+        print("进驻发电站时，无人机充能速度+20%")
+        self.drone_recover = 0
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 20
+
+
+class Ifrit(Operator):
+    skill_name = ["高热充能"]
+    pub = ["base.drone_recover"]
+
+    def skill(self):
+        print("这里是什么地方啊？")
+        print("进驻发电站时，无人机充能速度+15%")
+        self.drone_recover = 0
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 15
+
+
+class Passenger(Operator):
+    skill_name = ["聚能"]
+
+    def skill(self):
+        print("令人着迷的舰船，博士，萨尔贡可从未给予我这样的待遇。")
+        print("进驻发电站时，无人机充能速度+15%")
+        self.drone_recover = 0
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 15
+
+
+class Glaucus(Operator):
+    skill_name = ["电磁充能·β"]
+
+    def skill(self):
+        print("没问题，但先等我找到那颗螺丝钉......")
+        print("进驻发电站时，无人机充能速度+15%")
+        self.drone_recover = 0
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 15
+
+
+class Indigo(Operator):
+    skill_name = ["灯塔供能模块"]
+
+    def skill(self):
+        print("没关系，我一个人待着也可以。")
+        print("进驻发电站时，无人机充能速度+15%")
+        self.drone_recover = 0
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 15
+
+
+class Pudding(Operator):
+    skill_name = ["设备维护"]
+
+    def skill(self):
+        print("呼，把小抱枕放在哪里好呢......")
+        print("进驻发电站时，无人机充能速度+15%")
+        self.drone_recover = 0
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 15
+
+
+class Shaw(Operator):
+    skill_name = ["设备维护"]
+
+    def skill(self):
+        print("以后我就住这儿了对吧。")
+        print("进驻发电站时，无人机充能速度+15%")
+        self.drone_recover = 0
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 15
+
+
+class Purestream(Operator):
+    skill_name = ["设备维护"]
+
+    def skill(self):
+        print("希望能有大大的浴池呀~")
+        print("进驻发电站时，无人机充能速度+15%")
+        self.drone_recover = 0
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 15
+
+
+class Lava(Operator):
+    skill_name = ["热能充能·α"]
+
+    def skill(self):
+        print("好了够了，我喜欢一个人待着。")
+        print("进驻发电站时，无人机充能速度+10%")
+        self.drone_recover = 0
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 10
+
+
+class Blaze(Operator):
+    skill_name = ["热能充能·α"]
+
+    def skill(self):
+        print("这次罗德岛有没有添置什么新设施啊？")
+        print("进驻发电站时，无人机充能速度+10%")
+        self.drone_recover = 0
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 10
