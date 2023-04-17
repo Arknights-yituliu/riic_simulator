@@ -241,3 +241,20 @@ class Sora(Operator):
         self.efficiency = 0
         if isinstance(self.facility, TradingPost):
             self.efficiency = 30
+
+
+class Kaltsit(Operator):
+    skill_name = ["最高权限"]
+
+    def get_pub(self):
+        result = []
+        for i in (left_side := self.facility.base.left_side):
+            if isinstance(left_side[i], Factory):
+                result.append(left_side[i].location + ".efficiency")
+        return result
+
+    def skill(self):
+        print("这里的基础设施完成得怎么样了？")
+        print("进驻控制中枢时，所有制造站生产力+2%（同种效果取最高）")
+        self.efficiency = 2
+
