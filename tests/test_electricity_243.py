@@ -27,4 +27,4 @@ class Test(unittest.TestCase):
         Office(base, level=3)
         TrainingRoom(base, level=3)
         self.assertEqual(base.electricity, 810)
-        self.assertEqual(base.electricity_limit, 810)
+        self.assertEqual(base.extra["electricity_limit"]["value"], 810)

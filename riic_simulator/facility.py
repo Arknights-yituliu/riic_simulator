@@ -2,10 +2,13 @@ import random
 from pydispatch import dispatcher
 from riic_simulator.mixin import *
 
-class Base(MessageMixin):
+
+class Base(MessageMixin, SkillMixin):
+    pub = ["base.drone_recover"]
+
     def __init__(self):
+        self.base = self
         self.electricity = 0
-        self.electricity_limit = 0
         self.control_center = None
         self.dormitories = [None] * 4
         self.left_side = {}
@@ -14,6 +17,14 @@ class Base(MessageMixin):
         self.office = None
         self.training = None
         self.extra = {}
+
+        for i in self.pub:
+            self.add_item(i, self)
+        self.wrapper()
+
+    def skill(self):
+        self.drone_recover = 100
+
 
 class Facility:
     def __init__(
@@ -54,8 +65,9 @@ class ControlCenter(Facility):
         base.control_center = self
 
 
-class PowerPlant(Facility):
+class PowerPlant(Facility, SkillMixin):
     electircity_table = [60, 130, 270]
+    pub = ["base.electricity_limit", "base.drone_recover"]
 
     def __init__(self, base, level, location):
         super().__init__(
@@ -64,9 +76,16 @@ class PowerPlant(Facility):
             location=location,
             operators=[None],
         )
-        self.electricity = self.electircity_table[level - 1]
         base.left_side[location] = self
-        base.electricity_limit += self.electricity
+        for i in self.pub:
+            self.base.add_item(i, self)
+        self.wrapper()
+
+    def skill(self):
+        self.electricity_limit = self.electircity_table[self.level - 1]
+        self.drone_recover = 0
+        if self.operators[0]:
+            self.drone_recover = 5
 
 
 class PureGoldOrder:
