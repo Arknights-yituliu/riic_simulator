@@ -8,7 +8,6 @@ class Base(MessageMixin, SkillMixin):
 
     def __init__(self):
         self.base = self
-        self.electricity = 0
         self.control_center = None
         self.dormitories = [None] * 4
         self.left_side = {}
@@ -26,7 +25,7 @@ class Base(MessageMixin, SkillMixin):
         self.drone_recover = 100
 
 
-class Facility:
+class Facility(SkillMixin):
     def __init__(
         self,
         base=None,
@@ -42,13 +41,23 @@ class Facility:
         self.operators = operators
         self.extra = {}
 
-
-class ElectricityMixin:
-    electricity_table = [10, 30, 60]
-
-    def set_electricity(self):
-        self.electricity = self.electricity_table[self.level - 1]
-        self.base.electricity += self.electricity
+    def register_events(self):
+        signal = f"{self.location}.operators"
+        dispatcher.connect(self.wrapper, signal=signal)
+        if hasattr(self, "get_pub"):
+            self.pub = self.get_pub()
+        elif not hasattr(self, "pub"):
+            self.pub = []
+        for s in self.pub:
+            receiver, name = self.parse(s)
+            if isinstance(receiver, Base):
+                signal = f"base.{name}"
+            elif isinstance(receiver, Facility):
+                signal = f"{receiver.location}.{name}"
+            else:
+                signal = f"{receiver.__repr__}.{name}"
+            receiver.add_item(signal, self)
+        self.wrapper()
 
 
 class ControlCenter(Facility):
@@ -65,7 +74,7 @@ class ControlCenter(Facility):
         base.control_center = self
 
 
-class PowerPlant(Facility, SkillMixin):
+class PowerPlant(Facility):
     electircity_table = [60, 130, 270]
     pub = ["base.electricity_limit", "base.drone_recover"]
 
@@ -77,11 +86,7 @@ class PowerPlant(Facility, SkillMixin):
             operators=[None],
         )
         base.left_side[location] = self
-        signal = f"{self.location}.operators"
-        dispatcher.connect(self.wrapper, signal=signal)
-        for i in self.pub:
-            self.base.add_item(i, self)
-        self.wrapper()
+        self.register_events()
 
     def skill(self):
         self.electricity_limit = self.electircity_table[self.level - 1]
@@ -108,8 +113,14 @@ class PureGoldOrder:
         self.lmd = self.lmd_per_gold * self.count
 
 
-class TradingPost(Facility, ElectricityMixin, MessageMixin, SkillMixin):
-    pub = ["facility.efficiency", "facility.orders", "facility.limit"]
+class TradingPost(Facility, MessageMixin):
+    def get_pub(self):
+        return [
+            f"{self.location}.efficiency",
+            f"{self.location}.orders",
+            f"{self.location}.limit",
+            "base.electricity",
+        ]
 
     def __repr__(self):
         return f"{self.__class__.__name__}@{self.location}"
@@ -122,7 +133,6 @@ class TradingPost(Facility, ElectricityMixin, MessageMixin, SkillMixin):
             operators=[None] * level,
         )
         base.left_side[location] = self
-        self.set_electricity()
         self.probability_table = {
             1: {2: 1, 3: 0, 4: 0},
             2: {2: 0.6, 3: 0.4, 4: 0},
@@ -130,12 +140,7 @@ class TradingPost(Facility, ElectricityMixin, MessageMixin, SkillMixin):
         }[level]
         self.orders = []
         self.limit = [6, 8, 10][self.level - 1]
-
-        signal = f"{self.location}.operators"
-        dispatcher.connect(self.wrapper, signal=signal)
-        self.add_item(f"{self.location}.efficiency", self)
-        self.add_item(f"{self.location}.limit", self)
-        dispatcher.send(signal=signal)
+        self.register_events()
 
     def new_order(self):
         self.orders.append(PureGoldOrder(self.probability_table))
@@ -151,10 +156,16 @@ class TradingPost(Facility, ElectricityMixin, MessageMixin, SkillMixin):
             if o:
                 count += 1
         self.efficiency = 100 + count if count > 0 else 0
+        self.electricity = [10, 30, 60][self.level - 1]
 
 
-class Factory(Facility, ElectricityMixin, MessageMixin, SkillMixin):
-    pub = ["facility.efficiency", "facility.limit"]
+class Factory(Facility, MessageMixin):
+    def get_pub(self):
+        return [
+            f"{self.location}.efficiency",
+            f"{self.location}.limit",
+            "base.electricity",
+        ]
 
     def __repr__(self):
         return f"{self.__class__.__name__}@{self.location}"
@@ -168,12 +179,8 @@ class Factory(Facility, ElectricityMixin, MessageMixin, SkillMixin):
         )
         self.limit = [24, 36, 54][level - 1]
         base.left_side[location] = self
-        self.set_electricity()
 
-        signal = f"{self.location}.operators"
-        dispatcher.connect(self.wrapper, signal=signal)
-        self.add_item(f"{self.location}.efficiency", self)
-        dispatcher.send(signal=signal)
+        self.register_events()
 
     def skill(self):
         print("生产力（默认值：1）每进驻1名干员即可获得1%的基础加成。")
@@ -182,10 +189,11 @@ class Factory(Facility, ElectricityMixin, MessageMixin, SkillMixin):
             if o:
                 count += 1
         self.efficiency = 100 + count if count > 0 else 0
+        self.electricity = [10, 30, 60][self.level - 1]
 
 
-class Dormitory(Facility, ElectricityMixin):
-    electricity_table = [10, 20, 30, 45, 65]
+class Dormitory(Facility):
+    pub = ["base.electricity"]
 
     def __init__(self, base, level, index=None):
         super().__init__(
@@ -199,10 +207,15 @@ class Dormitory(Facility, ElectricityMixin):
         if not index:
             index = base.dormitories.index(None)
         base.dormitories[index] = self
-        self.set_electricity()
+        self.register_events()
+
+    def skill(self):
+        self.electricity = [10, 20, 30, 45, 65][self.level - 1]
 
 
-class ReceptionRoom(Facility, ElectricityMixin):
+class ReceptionRoom(Facility):
+    pub = ["base.electricity"]
+
     def __init__(self, base, level):
         Facility.__init__(
             self,
@@ -211,11 +224,14 @@ class ReceptionRoom(Facility, ElectricityMixin):
             operators=[None],
         )
         base.reception = self
-        self.set_electricity()
+        self.register_events()
+
+    def skill(self):
+        self.electricity = [10, 30, 60][self.level - 1]
 
 
-class Workshop(Facility, ElectricityMixin):
-    electricity_table = [10, 10, 10]
+class Workshop(Facility):
+    pub = ["base.electricity"]
 
     def __init__(self, base, level):
         Facility.__init__(
@@ -225,10 +241,15 @@ class Workshop(Facility, ElectricityMixin):
             operators=[None],
         )
         base.workshop = self
-        self.set_electricity()
+        self.register_events()
+
+    def skill(self):
+        self.electricity = 10
 
 
-class Office(Facility, ElectricityMixin):
+class Office(Facility):
+    pub = ["base.electricity"]
+
     def __init__(self, base, level):
         Facility.__init__(
             self,
@@ -237,10 +258,15 @@ class Office(Facility, ElectricityMixin):
             operators=[None],
         )
         base.office = self
-        self.set_electricity()
+        self.register_events()
+
+    def skill(self):
+        self.electricity = [10, 30, 60][self.level - 1]
 
 
-class TrainingRoom(Facility, ElectricityMixin):
+class TrainingRoom(Facility):
+    pub = ["base.electricity"]
+
     def __init__(self, base, level):
         Facility.__init__(
             self,
@@ -249,4 +275,7 @@ class TrainingRoom(Facility, ElectricityMixin):
             operators=[None],
         )
         base.training = self
-        self.set_electricity()
+        self.register_events()
+
+    def skill(self):
+        self.electricity = [10, 30, 60][self.level - 1]

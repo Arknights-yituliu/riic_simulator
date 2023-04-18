@@ -8,25 +8,27 @@ class SignalNameMixin:
 
     def parse(self, signal):
         if "." not in signal:
-            if hasattr(self, "facility"):
-                facility = self.facility.base
-            elif hasattr(self, "base"):
-                facility = self.base
-            else:
-                facility = self
-            return facility, "base", signal
+            signal = "base." + signal
         location, name = signal.split(".")
-        if hasattr(self, "facility"):
-            facility = self.facility
-        else:
-            facility = self
-        if location == "facility":
-            location = facility.location
+        if location == "self":
+            receiver = self
+        elif location == "base":
+            if hasattr(self, "base"):
+                receiver = self.base
+            else:
+                receiver = self.facility.base
+        elif location == "facility":
+            if hasattr(self, "facility"):
+                receiver = self.facility
+            else:
+                receiver = self
         elif location[0] == "B" and len(location) == 4:
-            facility = facility.base.left_side[location]
-        elif hasattr(base := facility.base, location):
-            facility = getattr(base, location)
-        return facility, location, name
+            if hasattr(self, "base"):
+                base = self.base
+            else:
+                base = self.facility.base
+            receiver = base.left_side[location]
+        return receiver, name
 
 
 class MessageMixin(SignalNameMixin):
@@ -73,5 +75,10 @@ class SkillMixin(SignalNameMixin):
         after = [getattr(self, p) for p in attr]
         for i in range(len(attr)):
             if before[i] != after[i]:
-                _, location, name = self.parse(self.pub[i])
-                dispatcher.send(signal=f"{location}.{name}")
+                receiver, name = self.parse(self.pub[i])
+                if hasattr(receiver, "base") and receiver.base == receiver:
+                    dispatcher.send(signal=f"base.{name}")
+                elif hasattr(receiver, "location"):
+                    dispatcher.send(signal=f"{receiver.location}.{name}")
+                else:
+                    dispatcher.send(signal=f"{receiver.__repr__}.{name}")

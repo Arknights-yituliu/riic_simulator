@@ -26,5 +26,5 @@ class Test(unittest.TestCase):
         Workshop(base, level=3)
         Office(base, level=3)
         TrainingRoom(base, level=3)
-        self.assertEqual(base.electricity, 540)
+        self.assertEqual(base.extra["electricity"]["value"], 540)
         self.assertEqual(base.extra["electricity_limit"]["value"], 540)

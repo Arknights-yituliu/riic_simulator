@@ -12,6 +12,8 @@ class Operator(SkillMixin, MessageMixin):
     def __init__(self):
         self.name = self.__class__.__name__
         self.extra = {}
+        self.morale_drain_redution = 100
+        self.morale_increase = 0
         self.add_item(f"{self.name}.morale_drain_redution", self)
         self.add_item(f"{self.name}.morale_increase", self)
 
@@ -29,14 +31,14 @@ class Operator(SkillMixin, MessageMixin):
             index = facility.operators.index(None)
         facility.operators[index] = self
         for s in self.sub:
-            facility, location, name = self.parse(s)
-            signal = f"{location}.{name}"
+            facility, name = self.parse(s)
+            signal = f"{facility.location}.{name}"
             if name != "operators":
                 facility.register(signal)
             dispatcher.connect(self.wrapper, signal=signal)
         for s in self.pub:
-            facility, location, name = self.parse(s)
-            signal = f"{location}.{name}"
+            facility, name = self.parse(s)
+            signal = f"{facility.location}.{name}"
             if name != "operators":
                 facility.add_item(signal, self)
         dispatcher.send(signal=f"{self.facility.location}.operators")
@@ -321,6 +323,7 @@ class Ifrit(Operator):
 
 class Passenger(Operator):
     skill_name = ["聚能"]
+    pub = ["base.drone_recover"]
 
     def skill(self):
         print("令人着迷的舰船，博士，萨尔贡可从未给予我这样的待遇。")
@@ -332,6 +335,7 @@ class Passenger(Operator):
 
 class Glaucus(Operator):
     skill_name = ["电磁充能·β"]
+    pub = ["base.drone_recover"]
 
     def skill(self):
         print("没问题，但先等我找到那颗螺丝钉......")
@@ -343,6 +347,7 @@ class Glaucus(Operator):
 
 class Indigo(Operator):
     skill_name = ["灯塔供能模块"]
+    pub = ["base.drone_recover"]
 
     def skill(self):
         print("没关系，我一个人待着也可以。")
@@ -354,6 +359,7 @@ class Indigo(Operator):
 
 class Pudding(Operator):
     skill_name = ["设备维护"]
+    pub = ["base.drone_recover"]
 
     def skill(self):
         print("呼，把小抱枕放在哪里好呢......")
@@ -365,6 +371,7 @@ class Pudding(Operator):
 
 class Shaw(Operator):
     skill_name = ["设备维护"]
+    pub = ["base.drone_recover"]
 
     def skill(self):
         print("以后我就住这儿了对吧。")
@@ -376,6 +383,7 @@ class Shaw(Operator):
 
 class Purestream(Operator):
     skill_name = ["设备维护"]
+    pub = ["base.drone_recover"]
 
     def skill(self):
         print("希望能有大大的浴池呀~")
@@ -387,6 +395,7 @@ class Purestream(Operator):
 
 class Lava(Operator):
     skill_name = ["热能充能·α"]
+    pub = ["base.drone_recover"]
 
     def skill(self):
         print("好了够了，我喜欢一个人待着。")
@@ -398,6 +407,7 @@ class Lava(Operator):
 
 class Blaze(Operator):
     skill_name = ["热能充能·α"]
+    pub = ["base.drone_recover"]
 
     def skill(self):
         print("这次罗德岛有没有添置什么新设施啊？")
@@ -405,3 +415,32 @@ class Blaze(Operator):
         self.drone_recover = 0
         if isinstance(self.facility, PowerPlant):
             self.drone_recover = 10
+
+
+class ThermalEX(Operator):
+    skill_name = ["备用能源", "热情澎湃"]
+    pub = ["base.drone_recover", "self.morale_drain_redution"]
+
+    def skill(self):
+        print("休息吗？哈哈对我来说还早着呢！我刚更换新的储能装置，离今天的工作结束还有50小时呢！")
+        print("进驻发电站时，无人机充能速度+10%，心情每小时消耗-0.52")
+        self.drone_recover = 0
+        self.morale_drain_redution = 100
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 10
+            self.morale_drain_redution -= 52
+
+
+class Castle3(Operator):
+    skill_name = ["备用能源", "作战指导录像"]
+    pub = ["base.drone_recover", "facility.efficiency"]
+
+    def skill(self):
+        print("有什么Castle-3能够帮忙的吗？")
+        print("进驻发电站时，无人机充能速度+10%；进驻制造站时，作战记录类配方的生产力+30%")
+        self.drone_recover = 0
+        self.efficiency = 0
+        if isinstance(self.facility, PowerPlant):
+            self.drone_recover = 10
+        elif isinstance(self.facility, Factory):
+            self.efficiency = 30
