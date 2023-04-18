@@ -32,13 +32,19 @@ class Operator(SkillMixin, MessageMixin):
         facility.operators[index] = self
         for s in self.sub:
             facility, name = self.parse(s)
-            signal = f"{facility.location}.{name}"
+            if facility == facility.base:
+                signal = f"base.{name}"
+            else:
+                signal = f"{facility.location}.{name}"
             if name != "operators":
                 facility.register(signal)
             dispatcher.connect(self.wrapper, signal=signal)
         for s in self.pub:
             facility, name = self.parse(s)
-            signal = f"{facility.location}.{name}"
+            if facility == facility.base:
+                signal = f"base.{name}"
+            else:
+                signal = f"{facility.location}.{name}"
             if name != "operators":
                 facility.add_item(signal, self)
         dispatcher.send(signal=f"{self.facility.location}.operators")
@@ -46,18 +52,24 @@ class Operator(SkillMixin, MessageMixin):
 
     def remove(self):
         for s in self.sub:
-            _, location, name = self.parse(s)
-            signal = f"{location}.{name}"
+            facility, name = self.parse(s)
+            if facility == facility.base:
+                signal = f"base.{name}"
+            else:
+                signal = f"{facility.location}.{name}"
             dispatcher.disconnect(self.wrapper, signal=signal)
         operators = self.facility.operators
         operators[operators.index(self)] = None
         dispatcher.send(signal=f"{self.facility.location}.operators")
         for s in self.pub:
-            facility, location, name = self.parse(s)
-            signal = f"{location}.{name}"
+            facility, name = self.parse(s)
+            if facility == facility.base:
+                signal = f"base.{name}"
+            else:
+                signal = f"{facility.location}.{name}"
             if name != "operators":
                 facility.remove_item(signal, self)
-            dispatcher.send(signal=f"{location}.{name}")
+            dispatcher.send(signal=signal)
         self.facility = None
 
 
